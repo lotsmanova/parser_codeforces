@@ -19,5 +19,9 @@ class CodeforcesAPI(GetAPI):
     def get_data(self):
         """Метод получения данных по API"""
 
-        response = requests.get(self.url).json()
-        return response['result']
+        response = requests.get(self.url)
+        if response.status_code == 200:
+            return response.json()['result']
+        else:
+            print('Ошибка при получении данных')
+
