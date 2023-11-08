@@ -12,11 +12,11 @@ class GetAPI(ABC):
 class CodeforcesAPI(GetAPI):
     """Класс для работы с API codeforces"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.url = f'https://codeforces.com/api/problemset.problems?order=BY_SOLVED_DESC'
 
 
-    def get_data(self):
+    def get_data(self) -> list[dict]:
         """Метод получения данных по API"""
 
         response = requests.get(self.url)
