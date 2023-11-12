@@ -35,12 +35,10 @@ class PostgresWorker(DBWorker):
 
 
     def __str__(self):
-
         return f'{self.db_name}'
 
 
     def __repr__(self):
-
         return f'PostgresWorker(db_name={self.db_name}, password={self.password}, user={self.user})'
 
     def create_database(self) -> None:
@@ -82,6 +80,8 @@ class PostgresWorker(DBWorker):
         conn.close()
 
     def add_data(self, data_codeforces: list[dict]) -> None:
+        """Добавление данных в БД"""
+
         conn = psycopg2.connect(dbname=db_name, password=self.password, user=self.user)
         with conn.cursor() as cur:
             for task in data_codeforces['problems']:
@@ -108,65 +108,40 @@ class PostgresWorker(DBWorker):
                         )
                         topic_id = cur.fetchone()[0]
 
-
-                    # добавляем данные в таблицу tasks
+                    # проверка существования записи
                     cur.execute(
                         """
-                        INSERT INTO tasks (topic_id, task_name, task_number, rating)
-                        VALUES (%s, %s, %s, %s)
-                        RETURNING task_id
+                        SELECT task_name, task_number FROM tasks WHERE task_name = %s AND task_number = %s
                         """,
-                        (topic_id, task['name'], f"{task['contestId']}{task['index']}", task.get('rating'))
+                        (task['name'], f"{task['contestId']}{task['index']}",)
                     )
-                    task_id = cur.fetchone()[0]
 
-                    for count in data_codeforces['problemStatistics']:
-                        if f"{count['contestId']}{count['index']}" == f"{task['contestId']}{task['index']}":
-                            cur.execute(
-                                """
-                                UPDATE tasks
-                                SET solved_count = %s
-                                WHERE task_id = %s
-                                """,
-                                (count['solvedCount'], task_id)
-                            )
-                            break
+                    task_id = cur.fetchone()
+
+                    if task_id is None:
+                        # добавляем данные в таблицу tasks
+                        cur.execute(
+                            """
+                            INSERT INTO tasks (topic_id, task_name, task_number, rating)
+                            VALUES (%s, %s, %s, %s)
+                            RETURNING task_id
+                            """,
+                            (topic_id, task['name'], f"{task['contestId']}{task['index']}", task.get('rating'))
+                        )
+                        task_id = cur.fetchone()[0]
+
+                        for count in data_codeforces['problemStatistics']:
+                            if f"{count['contestId']}{count['index']}" == f"{task['contestId']}{task['index']}":
+                                cur.execute(
+                                    """
+                                    UPDATE tasks
+                                    SET solved_count = %s
+                                    WHERE task_id = %s
+                                    """,
+                                    (count['solvedCount'], task_id)
+                                )
+                                break
 
             # завершение сеанса подключения
             conn.commit()
             conn.close()
-
-
-
-test = PostgresWorker(db_name, db_password)
-data = {'problems':
-    [
-        {'contestId': 1895, 'index': 'C', 'name': 'Torn Lucky Ticket', 'type': 'PROGRAMMING',
-         'tags': ['brute force', 'dp', 'hashing', 'implementation', 'math']},
-        {'contestId': 1893, 'index': 'C', 'name': 'Freedom of Choice', 'type': 'PROGRAMMING', 'points': 1250.0,
-         'tags': ['brute force', 'implementation']},
-        {'contestId': 1893, 'index': 'A', 'name': 'Anonymous Informant', 'type': 'PROGRAMMING', 'points': 500.0,
-         'tags': ['graphs', 'implementation']},
-        {'contestId': 1891, 'index': 'E', 'name': 'Brukhovich and Exams', 'type': 'PROGRAMMING', 'points': 2000.0,
-         'tags': ['brute force', 'greedy', 'implementation', 'math', 'sortings']},
-        {'contestId': 1890, 'index': 'B', 'name': 'Qingshan Loves Strings', 'type': 'PROGRAMMING', 'points': 750.0,
-         'tags': ['constructive algorithms', 'implementation']},
-        {'contestId': 1889, 'index': 'D', 'name': 'Game of Stacks', 'type': 'PROGRAMMING', 'points': 2000.0,
-         'tags': ['brute force', 'dfs and similar', 'graphs', 'implementation', 'trees']},
-        {'contestId': 1889, 'index': 'A', 'name': 'Qingshan Loves Strings 2', 'type': 'PROGRAMMING', 'points': 750.0,
-         'tags': ['constructive algorithms', 'greedy', 'implementation']}
-    ],
-    'problemStatistics':
-        [
-            {'contestId': 1895, 'index': 'C', 'solvedCount': 6817},
-            {'contestId': 1893, 'index': 'C', 'solvedCount': 780},
-            {'contestId': 1893, 'index': 'A', 'solvedCount': 4225},
-            {'contestId': 1891, 'index': 'E', 'solvedCount': 487},
-            {'contestId': 1890, 'index': 'B', 'solvedCount': 13807},
-            {'contestId': 1889, 'index': 'D', 'solvedCount': 317},
-            {'contestId': 1889, 'index': 'A', 'solvedCount': 9092}
-        ]
-}
-# test.create_database()
-# test.create_table()
-test.add_data(data)
