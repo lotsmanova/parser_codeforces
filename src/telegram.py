@@ -1,7 +1,7 @@
 import telebot
-from src.main import TELEGRAM_TOKEN
+from src.main import token_tg
 
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
+bot = telebot.TeleBot(token_tg)
 
 
 @bot.message_handler(content_types=['text'])
