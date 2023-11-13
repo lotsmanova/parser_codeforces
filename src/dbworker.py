@@ -1,15 +1,11 @@
 from abc import ABC, abstractmethod
 import psycopg2
 
-from src.main import DB_NAME
+from src.mixinpostgres import PostgresMixin
 
 
 class DBWorker(ABC):
     """Абстрактный класс для работы с БД"""
-
-    @abstractmethod
-    def create_database(self):
-        pass
 
     @abstractmethod
     def create_table(self):
@@ -19,55 +15,9 @@ class DBWorker(ABC):
     def add_data(self, data):
         pass
 
-
-class PostgresMixin:
-    def get_topic(self):
-        conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT topic_name FROM topics
-                """
-            )
-
-            topic_name = cur.fetchall()
-
-        return topic_name
-
-    def get_max_rating(self):
-        conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT MAX(rating) FROM tasks
-                """
-            )
-            max_rating = cur.fetchone()[0]
-
-            cur.execute(
-                """
-                SELECT MIN(rating) FROM tasks
-                """
-            )
-            min_rating = cur.fetchone()[0]
-
-        return max_rating, min_rating
-
-    def get_data_to_param(self, rating, topic):
-        conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT * FROM tasks 
-                WHERE rating = %s AND
-                topic_id = (SELECT topic_id FROM topics WHERE topic_name = %s)
-                LIMIT 10;
-                """,
-                (rating, topic,)
-            )
-
-            tasks_codeforces = cur.fetchall()
-        return tasks_codeforces
+    @abstractmethod
+    def end_connect(self):
+        pass
 
 
 class PostgresWorker(DBWorker, PostgresMixin):
@@ -76,6 +26,7 @@ class PostgresWorker(DBWorker, PostgresMixin):
         self.db_name = db_name
         self.user = user
         self.password = password
+        self.conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
 
     def __str__(self):
         return f'{self.db_name}'
@@ -83,21 +34,10 @@ class PostgresWorker(DBWorker, PostgresMixin):
     def __repr__(self):
         return f'PostgresWorker(db_name={self.db_name}, password={self.password}, user={self.user})'
 
-    def create_database(self) -> None:
-        """Создание БД"""
-
-        conn = psycopg2.connect(password=self.password, user=self.user)
-        conn.autocommit = True
-        with conn.cursor() as cur:
-            cur.execute(f"CREATE DATABASE {self.db_name}")
-
-        conn.close()
-
     def create_table(self) -> None:
         """Создание таблицы в БД"""
 
-        conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
-        with conn.cursor() as cur:
+        with self.conn.cursor() as cur:
             cur.execute("""
                     CREATE TABLE topics 
                     (
@@ -118,14 +58,12 @@ class PostgresWorker(DBWorker, PostgresMixin):
                     );
                 """)
 
-        conn.commit()
-        conn.close()
+        self.conn.commit()
 
-    def add_data(self, data_codeforces: list[dict]) -> None:
+    def add_data(self, data_codeforces: dict) -> None:
         """Добавление данных в БД"""
 
-        conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
-        with conn.cursor() as cur:
+        with self.conn.cursor() as cur:
             for task in data_codeforces['problems']:
                 # проверка существования записи
                 for tag in task['tags']:
@@ -185,5 +123,9 @@ class PostgresWorker(DBWorker, PostgresMixin):
                                 break
 
             # завершение сеанса подключения
-            conn.commit()
-            conn.close()
+            self.conn.commit()
+
+    def end_connect(self) -> None:
+        """Метод для завершения подключения к БД"""
+
+        self.conn.close()
