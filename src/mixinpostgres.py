@@ -15,7 +15,7 @@ class PostgresMixin:
         """Метод проверки создания таблиц"""
 
         with self.conn.cursor() as cur:
-            cur.execute(f"SELECT 1 FROM pg_tables WHERE tablename='topics' AND tablename='tasks'")
+            cur.execute(f"SELECT 1 FROM pg_tables WHERE tablename='topics'")
             exists = cur.fetchone()
             if exists:
                 return True
@@ -37,7 +37,7 @@ class PostgresMixin:
         return topic_name
 
     def get_max_rating(self) -> int:
-        """Метод получения максимальной и минимальной сложности задач"""
+        """Метод получения максимальной сложности задач"""
 
         with self.conn.cursor() as cur:
             cur.execute(
@@ -47,6 +47,12 @@ class PostgresMixin:
             )
             max_rating = cur.fetchone()[0]
 
+        return max_rating
+
+    def get_min_rating(self) -> int:
+        """Метод получения минимальной сложности задач"""
+
+        with self.conn.cursor() as cur:
             cur.execute(
                 """
                 SELECT MIN(rating) FROM tasks
@@ -54,21 +60,4 @@ class PostgresMixin:
             )
             min_rating = cur.fetchone()[0]
 
-        return max_rating, min_rating
-
-    def get_data_to_param(self, rating: str, topic: str) -> list:
-        """Метод получения задач по переданным параметрам"""
-
-        with self.conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT * FROM tasks 
-                WHERE rating = %s AND
-                topic_id = (SELECT topic_id FROM topics WHERE topic_name = %s)
-                LIMIT 10;
-                """,
-                (rating, topic,)
-            )
-
-            tasks_codeforces = cur.fetchall()
-        return tasks_codeforces
+        return min_rating
