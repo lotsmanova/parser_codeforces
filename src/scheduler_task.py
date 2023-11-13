@@ -1,7 +1,15 @@
-from datetime import datetime
+import schedule
+import time
+
+from src.main import main
 
 
 def job():
-    """Функция для запуска парсера каждый час"""
+    main()
 
-    print('Программа запущена! Время: %s' % datetime.now())
+
+schedule.every(1).minutes.do(job)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
