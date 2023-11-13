@@ -1,13 +1,7 @@
-import os
 from abc import ABC, abstractmethod
-
 import psycopg2
-from dotenv import load_dotenv
 
-load_dotenv('../.env')
-
-db_name = os.getenv('DB_NAME')
-db_password = os.getenv('DB_PASSWORD')
+from src.main import DB_NAME
 
 
 class DBWorker(ABC):
@@ -54,7 +48,7 @@ class PostgresWorker(DBWorker):
     def create_table(self) -> None:
         """Создание таблицы в БД"""
 
-        conn = psycopg2.connect(dbname=db_name, password=self.password, user=self.user)
+        conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
         with conn.cursor() as cur:
             cur.execute("""
                     CREATE TABLE topics 
