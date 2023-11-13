@@ -20,17 +20,65 @@ class DBWorker(ABC):
         pass
 
 
-class PostgresWorker(DBWorker):
+class PostgresMixin:
+    def get_topic(self):
+        conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT topic_name FROM topics
+                """
+            )
+
+            topic_name = cur.fetchall()
+
+        return topic_name
+
+    def get_max_rating(self):
+        conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT MAX(rating) FROM tasks
+                """
+            )
+            max_rating = cur.fetchone()[0]
+
+            cur.execute(
+                """
+                SELECT MIN(rating) FROM tasks
+                """
+            )
+            min_rating = cur.fetchone()[0]
+
+        return max_rating, min_rating
+
+    def get_data_to_param(self, rating, topic):
+        conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT * FROM tasks 
+                WHERE rating = %s AND
+                topic_id = (SELECT topic_id FROM topics WHERE topic_name = %s)
+                LIMIT 10;
+                """,
+                (rating, topic,)
+            )
+
+            tasks_codeforces = cur.fetchall()
+        return tasks_codeforces
+
+
+class PostgresWorker(DBWorker, PostgresMixin):
 
     def __init__(self, db_name: str, password: str, user='postgres') -> None:
         self.db_name = db_name
         self.user = user
         self.password = password
 
-
     def __str__(self):
         return f'{self.db_name}'
-
 
     def __repr__(self):
         return f'PostgresWorker(db_name={self.db_name}, password={self.password}, user={self.user})'
@@ -76,7 +124,7 @@ class PostgresWorker(DBWorker):
     def add_data(self, data_codeforces: list[dict]) -> None:
         """Добавление данных в БД"""
 
-        conn = psycopg2.connect(dbname=db_name, password=self.password, user=self.user)
+        conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
         with conn.cursor() as cur:
             for task in data_codeforces['problems']:
                 # проверка существования записи
