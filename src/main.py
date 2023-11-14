@@ -9,10 +9,11 @@ load_dotenv('../.env')
 db_name = os.getenv('DB_NAME')
 db_password = os.getenv('DB_PASSWORD')
 token_tg = os.getenv('TELEGRAM_TOKEN')
+api_codeforces = os.getenv('API_CODEFORCES')
 
 
 def main():
-    codeforces_api = CodeforcesAPI()
+    codeforces_api = CodeforcesAPI(api_codeforces)
 
     # parser data in codeforces
     codeforces_data = codeforces_api.get_data()
