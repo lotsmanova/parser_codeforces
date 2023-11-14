@@ -23,5 +23,5 @@ class CodeforcesAPI(GetAPI):
         if response.status_code == 200:
             return response.json()['result']
         else:
-            print('Ошибка при получении данных')
+            return 'Ошибка при получении данных'
 
