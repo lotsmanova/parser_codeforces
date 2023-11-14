@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import psycopg2
-
 from src.mixinpostgres import PostgresMixin
 
 
