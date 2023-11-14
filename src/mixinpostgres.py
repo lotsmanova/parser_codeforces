@@ -1,16 +1,6 @@
 class PostgresMixin:
     """Класс миксин для работы с БД"""
 
-    def check_create_db(self):
-        """Метод проверки создания БД"""
-        with self.conn.cursor() as cur:
-            cur.execute(f"SELECT 1 FROM pg_database WHERE datname='{self.db_name}'")
-            exists = cur.fetchone()
-            if exists:
-                return True
-            else:
-                return False
-
     def check_create_table(self):
         """Метод проверки создания таблиц"""
 
