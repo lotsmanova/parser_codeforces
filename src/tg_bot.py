@@ -74,8 +74,10 @@ def get_topic(message):
 
     global topic
     topic = message.text.lower()
-    bot.send_message(message.from_user.id, f'Обрабатываю запрос на получение задач по теме "{topic}" со сложностью {rating}')
+    bot.send_message(message.from_user.id,
+                     f'Обрабатываю запрос на получение задач по теме "{topic}" со сложностью {rating}')
     bot.register_next_step_handler(message, get_data_db)
+
 
 @bot.message_handler(func=lambda message: True)
 def get_data_db(message):
@@ -109,11 +111,8 @@ def get_data_db(message):
 
         tasks_codeforces = cur.fetchall()
 
-        if tasks_codeforces is None:
-            bot.send_message(message.from_user.id, 'Задач по вашему запросу не найдено, '
-                                                   'чтобы отправить новый запрос, введите: "/start"')
+        if tasks_codeforces is not []:
 
-        else:
             tasks_str = []
             i = 0
             for task in tasks_codeforces:
@@ -137,6 +136,10 @@ def get_data_db(message):
             bot.send_message(message.from_user.id, f'Задачи по вашему запросу: \n' + '\n'.join(tasks_str))
             bot.send_message(message.from_user.id, 'Ваш запрос выполнен, чтобы отправить новый запрос, '
                                                    'введите: "/start"')
+
+        else:
+            bot.send_message(message.from_user.id, 'Задач по вашему запросу не найдено, '
+                                                   'чтобы отправить новый запрос, введите: "/start"')
 
 
 bot.polling(none_stop=True, interval=0)
