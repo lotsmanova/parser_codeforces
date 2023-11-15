@@ -1,4 +1,5 @@
-import sys
+import re
+
 import psycopg2
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -59,7 +60,6 @@ def stop(message):
     running = False
 
     bot.send_message(message.from_user.id, "Бот остановлен")
-    # sys.exit()
 
 
 def get_rating(message):
@@ -120,8 +120,6 @@ def get_data_db(message):
 
     global rating
     global topic
-    if not running:
-        return
 
     conn = psycopg2.connect(dbname=db_name, password=db_password, user='postgres')
     with conn.cursor() as cur:
@@ -168,11 +166,13 @@ def get_data_db(message):
                     num_for_link = task_num[:len(task_num) - 1]
                     index = task_num[-1:]
 
-                tasks_str.append(f"{i}. Номер задачи: {task_num};\nНазвание: {task_name};\n"
-                                 f"Количество решений: {count};\nСсылка на задачу: "
-                                 f"https://codeforces.com/problemset/problem/{num_for_link}/{index}\n")
+                task_link = f"https://codeforces.com/problemset/problem/{num_for_link}/{index}"
+                task_text = (f"{i}. Номер задачи: {task_num};\nНазвание: {task_name};\nКоличество решений: {count};\n"
+                             f"<a href='{task_link}'>Ссылка на задачу</a>\n")
+                tasks_str.append(task_text)
 
-            bot.send_message(message.from_user.id, f'Задачи по вашему запросу: \n' + '\n'.join(tasks_str))
+            tasks_message = "Задачи по вашему запросу:\n\n" + "\n".join(tasks_str)
+            bot.send_message(message.from_user.id, tasks_message, parse_mode="HTML")
             bot.send_message(message.from_user.id, f'Чтобы отправить новый запрос, введите "/start"')
 
         else:
@@ -180,6 +180,5 @@ def get_data_db(message):
             start(message)
 
 
-# bot.polling(none_stop=True, interval=0)
 while running:
     bot.polling(none_stop=True, interval=0)
