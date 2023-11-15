@@ -1,5 +1,7 @@
 import psycopg2
 import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 from src.dbworker import PostgresWorker
 from src.main import token_tg, db_name, db_password
 
@@ -14,7 +16,11 @@ min_rating = db_worker.get_min_rating()
 max_rating = db_worker.get_max_rating()
 
 list_topic_db = db_worker.get_topic()
+list_str_topic = []
 
+for tuple_topic in list_topic_db:
+    str_topic = ''.join(tuple_topic)
+    list_str_topic.append(str_topic)
 
 @bot.message_handler(content_types=['text'])
 def start(message):
@@ -27,6 +33,11 @@ def start(message):
             "Чтобы получить задачи с сайта, следуй дальнейшим инструкциям."
             f"Выбери уровень сложности от {min_rating} до {max_rating}"
         )
+    # elif message.text == '/stop':
+    #     bot.send_message(
+    #         message.from_user.id,
+    #         "Бот остановлен. Напиши '/start', если хочешь начать"
+    #     )
     else:
         bot.send_message(
             message.from_user.id,
@@ -45,17 +56,15 @@ def get_rating(message):
         if min_rating < int(message.text) < max_rating:
             rating = message.text
 
-            list_str_topic = []
+            main_kb = InlineKeyboardMarkup()
+            buttons = []
+            for topic_task in list_str_topic:
+                buttons.append(InlineKeyboardButton(topic_task, callback_data=topic_task))
 
-            for tuple_topic in list_topic_db:
-                str_topic = ''.join(tuple_topic)
-                list_str_topic.append(str_topic)
-            list_topic = '\n'.join(list_str_topic)
+            main_kb.add(*buttons)
 
-            bot.send_message(message.from_user.id, f'Выбери одну из тем: \n'
-                                                   f'{list_topic}')
+            bot.send_message(message.from_user.id, 'Выбери одну из тем: \n', reply_markup=main_kb)
 
-            bot.register_next_step_handler(message, get_topic)
         else:
             bot.send_message(
                 message.from_user.id,
@@ -69,14 +78,15 @@ def get_rating(message):
         )
 
 
-def get_topic(message):
-    """Функция выбора темы"""
-
+@bot.callback_query_handler(func=lambda call: True)
+def callback(call):
     global topic
-    topic = message.text.lower()
-    bot.send_message(message.from_user.id,
-                     f'Обрабатываю запрос на получение задач по теме "{topic}" со сложностью {rating}')
-    bot.register_next_step_handler(message, get_data_db)
+    topic = call.data
+    for topic_task in list_str_topic:
+        if topic_task in call.data:
+            bot.send_message(call.message.chat.id,
+                             f'Обрабатываю запрос на получение задач по теме "{topic}" со сложностью {rating}')
+            bot.register_next_step_handler(call.message, get_data_db)
 
 
 @bot.message_handler(func=lambda message: True)
@@ -111,7 +121,7 @@ def get_data_db(message):
 
         tasks_codeforces = cur.fetchall()
 
-        if tasks_codeforces is not []:
+        if tasks_codeforces != []:
 
             tasks_str = []
             i = 0
