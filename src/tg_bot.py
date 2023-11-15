@@ -68,8 +68,7 @@ def get_rating(message):
     global rating
 
     if message.text != '/stop':
-
-        if message.text.isdigit():
+        if message.text.isdigit() and '0' in message.text:
             if min_rating <= int(message.text) <= max_rating:
                 rating = message.text
 
@@ -102,8 +101,7 @@ def get_rating(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback(call):
     global topic
-    if not running:
-        return
+
     topic = call.data
     for topic_task in list_str_topic:
         if topic_task in call.data:
@@ -111,7 +109,14 @@ def callback(call):
                              f'Обрабатываю запрос на получение задач по теме "{topic}" со сложностью {rating}')
             bot.send_message(call.message.chat.id,
                              f'Чтобы получить ответ на запрос, введите "ok"')
+            remove_inline_keyboard(call.message)
             bot.register_next_step_handler(call.message, get_data_db)
+
+
+def remove_inline_keyboard(message):
+    """Remove the inline keyboard from a message"""
+
+    bot.edit_message_reply_markup(message.chat.id, message.message_id)
 
 
 @bot.message_handler(func=lambda message: True)
@@ -171,7 +176,7 @@ def get_data_db(message):
                              f"<a href='{task_link}'>Ссылка на задачу</a>\n")
                 tasks_str.append(task_text)
 
-            tasks_message = "Задачи по вашему запросу:\n\n" + "\n".join(tasks_str)
+            tasks_message = f"Задачи по теме '{topic}' со сложностью {rating}:\n\n" + "\n".join(tasks_str)
             bot.send_message(message.from_user.id, tasks_message, parse_mode="HTML")
             bot.send_message(message.from_user.id, f'Чтобы отправить новый запрос, введите "/start"')
 
