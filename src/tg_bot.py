@@ -114,7 +114,7 @@ def callback(call):
 
 
 def remove_inline_keyboard(message):
-    """Remove the inline keyboard from a message"""
+    """Функция удаления внутренней клавиатуры с выбором тем"""
 
     bot.edit_message_reply_markup(message.chat.id, message.message_id)
 
