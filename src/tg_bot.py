@@ -40,18 +40,33 @@ def get_rating(message):
     """Функция выбора сложности задачи"""
 
     global rating
-    rating = message.text
-    list_str_topic = []
 
-    for tuple_topic in list_topic_db:
-        str_topic = ''.join(tuple_topic)
-        list_str_topic.append(str_topic)
-    list_topic = '\n'.join(list_str_topic)
+    if message.text.isdigit():
+        if min_rating < int(message.text) < max_rating:
+            rating = message.text
 
-    bot.send_message(message.from_user.id, f'Выбери одну из тем: \n'
-                                           f'{list_topic}')
+            list_str_topic = []
 
-    bot.register_next_step_handler(message, get_topic)
+            for tuple_topic in list_topic_db:
+                str_topic = ''.join(tuple_topic)
+                list_str_topic.append(str_topic)
+            list_topic = '\n'.join(list_str_topic)
+
+            bot.send_message(message.from_user.id, f'Выбери одну из тем: \n'
+                                                   f'{list_topic}')
+
+            bot.register_next_step_handler(message, get_topic)
+        else:
+            bot.send_message(
+                message.from_user.id,
+                f"Сложность должна быть в диапазоне от {min_rating} до {max_rating}. Повторите запрос. Напиши '/start'"
+            )
+
+    else:
+        bot.send_message(
+            message.from_user.id,
+            "Сложность должна быть числом. Повторите запрос. Напиши '/start'"
+        )
 
 
 def get_topic(message):
@@ -86,6 +101,7 @@ def get_data_db(message):
             f"""
             SELECT * FROM tasks
             WHERE rating = %s AND topic_id = {topic_id[0]}
+            ORDER BY solved_count DESC
             LIMIT 10;
             """,
             (rating,)
@@ -94,7 +110,8 @@ def get_data_db(message):
         tasks_codeforces = cur.fetchall()
 
         if tasks_codeforces is None:
-            bot.send_message(message.from_user.id, f'Задач по вашему запросу не найдено')
+            bot.send_message(message.from_user.id, 'Задач по вашему запросу не найдено, '
+                                                   'чтобы отправить новый запрос, введите: "/start"')
 
         else:
             tasks_str = []
@@ -104,10 +121,22 @@ def get_data_db(message):
                 task_num = task[2]
                 task_name = task[1]
                 count = task[4]
-                tasks_str.append(f"{i}. Номер задачи: {task_num}, название: {task_name}, количество решений: {count}")
+
+                slice_num = task_num[-2:]
+                if slice_num[0].isalpha():
+                    num_for_link = task_num[:len(task_num) - 2]
+                    index = slice_num
+                else:
+                    num_for_link = task_num[:len(task_num) - 1]
+                    index = task_num[-1:]
+
+                tasks_str.append(f"{i}. Номер задачи: {task_num}, название: {task_name}, количество решений: {count}, "
+                                 f"ссылка на задачу: https://codeforces.com/problemset/problem/"
+                                 f"{num_for_link}/{index}\n")
 
             bot.send_message(message.from_user.id, f'Задачи по вашему запросу: \n' + '\n'.join(tasks_str))
-            bot.send_message(message.from_user.id, 'Ваш запрос выполнен, чтобы отправить новый запрос, введите: "/start"')
+            bot.send_message(message.from_user.id, 'Ваш запрос выполнен, чтобы отправить новый запрос, '
+                                                   'введите: "/start"')
 
 
 bot.polling(none_stop=True, interval=0)
