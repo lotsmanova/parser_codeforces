@@ -5,7 +5,7 @@ class PostgresMixin:
         """Метод проверки создания таблиц"""
 
         with self.conn.cursor() as cur:
-            cur.execute(f"SELECT 1 FROM pg_tables WHERE tablename='topics'")
+            cur.execute("SELECT 1 FROM pg_tables WHERE tablename='topics'")
             exists = cur.fetchone()
             if exists:
                 return True

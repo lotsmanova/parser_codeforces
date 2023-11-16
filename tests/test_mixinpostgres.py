@@ -27,9 +27,15 @@ def create_test_database():
 def data_for_db():
     data = {
         'problems': [
-            {'contestId': 1895, 'index': 'C', 'name': 'TEST', 'type': 'PROGRAMMING', 'tags': ['brute force', 'dp'], 'rating': 1000},
-            {'contestId': 1893, 'index': 'C', 'name': 'Freedom of Choice', 'type': 'PROGRAMMING', 'points': 1250.0, 'tags': ['brute force', 'implementation'], 'rating': 2000},
-            {'contestId': 1893, 'index': 'A', 'name': 'Anonymous Informant', 'type': 'PROGRAMMING', 'points': 500.0, 'tags': ['graphs', 'implementation'], 'rating': 1500},
+            {'contestId': 1895, 'index': 'C', 'name': 'TEST',
+             'type': 'PROGRAMMING', 'tags': ['brute force', 'dp'],
+             'rating': 1000},
+            {'contestId': 1893, 'index': 'C', 'name': 'Freedom of Choice',
+             'type': 'PROGRAMMING', 'points': 1250.0,
+             'tags': ['brute force', 'implementation'], 'rating': 2000},
+            {'contestId': 1893, 'index': 'A', 'name': 'Anonymous Informant',
+             'type': 'PROGRAMMING', 'points': 500.0,
+             'tags': ['graphs', 'implementation'], 'rating': 1500},
             ],
         'problemStatistics': [
             {'contestId': 1895, 'index': 'C', 'solvedCount': 6817},
@@ -45,7 +51,8 @@ def test_get_topic(create_test_database, data_for_db):
     db = PostgresWorker(name, password)
     db.add_data(data_for_db)
 
-    assert db.get_topic() == [('brute force',), ('dp',), ('implementation',), ('graphs',)]
+    assert db.get_topic() == [('brute force',), ('dp',),
+                              ('implementation',), ('graphs',)]
 
 
 def test_get_max_rating(create_test_database, data_for_db):

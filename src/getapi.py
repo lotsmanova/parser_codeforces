@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import requests
 
+
 class GetAPI(ABC):
     """Абстрактный класс для работы с API"""
 
@@ -15,7 +16,6 @@ class CodeforcesAPI(GetAPI):
     def __init__(self, api_codeforces) -> None:
         self.url = api_codeforces
 
-
     def get_data(self) -> list[dict]:
         """Метод получения данных по API"""
 
@@ -24,4 +24,3 @@ class CodeforcesAPI(GetAPI):
             return response.json()['result']
         else:
             return 'Ошибка при получении данных'
-

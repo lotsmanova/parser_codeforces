@@ -1,5 +1,6 @@
 import psycopg2
 
+
 def create_database(db_name, password, user='postgres') -> None:
     """Создание БД"""
 

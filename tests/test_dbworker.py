@@ -27,9 +27,12 @@ def create_test_database():
 def data_for_db():
     data = {
         'problems': [
-            {'contestId': 1895, 'index': 'C', 'name': 'TEST', 'type': 'PROGRAMMING', 'tags': ['brute force', 'dp', 'hashing', 'implementation', 'math']},
-            {'contestId': 1893, 'index': 'C', 'name': 'Freedom of Choice', 'type': 'PROGRAMMING', 'points': 1250.0, 'tags': ['brute force', 'implementation']},
-            {'contestId': 1893, 'index': 'A', 'name': 'Anonymous Informant', 'type': 'PROGRAMMING', 'points': 500.0, 'tags': ['graphs', 'implementation']},
+            {'contestId': 1895, 'index': 'C', 'name': 'TEST', 'type': 'PROGRAMMING',
+             'tags': ['brute force', 'dp', 'hashing', 'implementation', 'math']},
+            {'contestId': 1893, 'index': 'C', 'name': 'Freedom of Choice', 'type': 'PROGRAMMING', 'points': 1250.0,
+             'tags': ['brute force', 'implementation']},
+            {'contestId': 1893, 'index': 'A', 'name': 'Anonymous Informant', 'type': 'PROGRAMMING', 'points': 500.0,
+             'tags': ['graphs', 'implementation']},
             ],
         'problemStatistics': [
             {'contestId': 1895, 'index': 'C', 'solvedCount': 6817},

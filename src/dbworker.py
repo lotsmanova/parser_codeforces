@@ -25,20 +25,22 @@ class PostgresWorker(DBWorker, PostgresMixin):
         self.db_name = db_name
         self.user = user
         self.password = password
-        self.conn = psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user)
+        self.conn = psycopg2.connect(dbname=self.db_name,
+                                     password=self.password, user=self.user)
 
     def __str__(self):
         return f'{self.db_name}'
 
     def __repr__(self):
-        return f'PostgresWorker(db_name={self.db_name}, password={self.password}, user={self.user})'
+        return (f'PostgresWorker(db_name={self.db_name}, '
+                f'password={self.password}, user={self.user})')
 
     def create_table(self) -> None:
         """Создание таблицы в БД"""
 
         with self.conn.cursor() as cur:
             cur.execute("""
-                    CREATE TABLE topics 
+                    CREATE TABLE topics
                     (
                         topic_id serial PRIMARY KEY,
                         topic_name varchar(255) NOT NULL
@@ -46,7 +48,7 @@ class PostgresWorker(DBWorker, PostgresMixin):
                 """)
 
             cur.execute("""
-                    CREATE TABLE tasks 
+                    CREATE TABLE tasks
                     (
                         task_id serial PRIMARY KEY,
                         task_name varchar(255) NOT NULL,
@@ -90,7 +92,8 @@ class PostgresWorker(DBWorker, PostgresMixin):
                     # проверка существования записи
                     cur.execute(
                         """
-                        SELECT task_name, task_number FROM tasks WHERE task_name = %s AND task_number = %s
+                        SELECT task_name, task_number FROM tasks
+                        WHERE task_name = %s AND task_number = %s
                         """,
                         (task['name'], f"{task['contestId']}{task['index']}",)
                     )
