@@ -1,15 +1,7 @@
-import os
+from src.config import api_codeforces, db_name, db_password
 from src.getapi import CodeforcesAPI
 from src.dbworker import PostgresWorker
-from dotenv import load_dotenv
 from src.utils import create_database, check_create_db
-
-load_dotenv('../.env')
-
-db_name = os.getenv('DB_NAME')
-db_password = os.getenv('DB_PASSWORD')
-token_tg = os.getenv('TELEGRAM_TOKEN')
-api_codeforces = os.getenv('API_CODEFORCES')
 
 
 def main():
