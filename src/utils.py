@@ -12,13 +12,10 @@ def create_database(db_name, password, user='postgres') -> None:
     conn.close()
 
 
-def check_create_db(db_name, password, user='postgres'):
+def check_create_db(db_name, password, user):
     """Метод проверки создания БД"""
     conn = psycopg2.connect(password=password, user=user)
     with conn.cursor() as cur:
         cur.execute(f"SELECT 1 FROM pg_database WHERE datname='{db_name}'")
         exists = cur.fetchone()
-        if exists:
-            return True
-        else:
-            return False
+        return exists

@@ -12,7 +12,7 @@ def main():
     print('Получены данные с сайта codeforces.com')
 
     # create db
-    if check_create_db(db_name, db_password, db_user) is False:
+    if check_create_db(db_name, db_password, db_user) is None:
         create_database(db_name, db_password)
         print(f'Создана база данных {db_name}')
     else:
