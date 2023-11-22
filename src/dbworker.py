@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import psycopg2
-from src.config import db_user
+from src.config import db_user, db_host
 from src.mixinpostgres import PostgresMixin
 
 
@@ -24,6 +24,7 @@ class PostgresWorker(DBWorker, PostgresMixin):
         self.db_name = db_name
         self.user = db_user
         self.password = password
+        self.host = db_host
 
     def __str__(self):
         return f'{self.db_name}'
@@ -35,7 +36,7 @@ class PostgresWorker(DBWorker, PostgresMixin):
     def create_table(self) -> None:
         """Создание таблицы в БД"""
 
-        with psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user) as conn:
+        with psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user, host=self.host) as conn:
 
             with conn.cursor() as cur:
                 cur.execute("""
