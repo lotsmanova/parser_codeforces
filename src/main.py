@@ -1,4 +1,4 @@
-from src.config import api_codeforces, db_name, db_password
+from src.config import api_codeforces, db_name, db_password, db_user
 from src.getapi import CodeforcesAPI
 from src.dbworker import PostgresWorker
 from src.utils import create_database, check_create_db
@@ -12,7 +12,7 @@ def main():
     print('Получены данные с сайта codeforces.com')
 
     # create db
-    if check_create_db is False:
+    if check_create_db(db_name, db_password, db_user) is False:
         create_database(db_name, db_password)
         print(f'Создана база данных {db_name}')
     else:
@@ -21,7 +21,7 @@ def main():
     # create table
     db_worker = PostgresWorker(db_name, db_password)
 
-    if db_worker.check_create_table() is False:
+    if db_worker.check_create_table() is None:
         db_worker.create_table()
         print('Созданы таблицы topics и tasks')
     else:
@@ -30,8 +30,6 @@ def main():
     # add data to db
     db_worker.add_data(codeforces_data)
     print(f'Добавлены данные в БД {db_name}')
-
-    db_worker.end_connect()
 
 
 if __name__ == '__main__':
