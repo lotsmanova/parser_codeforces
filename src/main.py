@@ -1,4 +1,4 @@
-from src.config import api_codeforces, db_name, db_password, db_user
+from config import api_codeforces, db_name, db_password
 from src.getapi import CodeforcesAPI
 from src.dbworker import PostgresWorker
 from src.utils import create_database, check_create_db

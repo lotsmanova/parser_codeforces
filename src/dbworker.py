@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import psycopg2
-from src.config import db_user, db_host
+from config import db_user, db_host
 from src.mixinpostgres import PostgresMixin
 
 

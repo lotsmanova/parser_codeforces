@@ -1,7 +1,7 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from src.dbworker import PostgresWorker
-from src.config import token_tg, db_name, db_password
+from config import token_tg, db_name, db_password
 
 
 bot = telebot.TeleBot(token_tg)

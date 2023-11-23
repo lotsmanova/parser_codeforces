@@ -1,6 +1,6 @@
 import psycopg2
 import pytest
-from src.config import db_user, db_name, db_host, db_password
+from config import db_user, db_name, db_host, db_password
 from src.dbworker import PostgresWorker
 
 main_db_creds = {
@@ -50,7 +50,7 @@ def remote_test_database():
     conn.close()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def get_bd_connection():
     create_test_database()
     print('create')
@@ -58,17 +58,17 @@ def get_bd_connection():
     remote_test_database()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def db_worker():
     return PostgresWorker(test_db_name, main_db_creds['password'])
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def db_create_table(db_worker):
     worker = db_worker
     worker.create_table()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def data_for_test():
     return get_data_test()

@@ -1,5 +1,5 @@
 import psycopg2
-from src.config import db_user
+from config import db_user
 
 
 def create_database(db_name, password) -> None:
