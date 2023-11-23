@@ -29,9 +29,9 @@ def get_data_test():
             {'contestId': 1, 'index': 'A', 'name': 'test1', 'type': 'PROGRAMMING',
              'tags': ['brute force', 'dp', 'hashing', 'implementation', 'math']},
             {'contestId': 2, 'index': 'B', 'name': 'test2', 'type': 'PROGRAMMING', 'points': 1250.0,
-             'tags': ['brute force', 'implementation']},
+             'tags': ['brute force', 'implementation'], 'rating': 1000},
             {'contestId': 3, 'index': 'C', 'name': 'test3', 'type': 'PROGRAMMING', 'points': 500.0,
-             'tags': ['graphs', 'implementation']},
+             'tags': ['graphs', 'implementation'], 'rating': 10},
             ],
         'problemStatistics': [
             {'contestId': 1, 'index': 'A', 'solvedCount': 6817},

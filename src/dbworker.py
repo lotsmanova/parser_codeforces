@@ -13,8 +13,18 @@ class DBWorker(ABC):
         pass
 
     @abstractmethod
-    def add_data(self, data):
+    def add_data(self, data: dict):
         """Добавление данных в БД"""
+        pass
+
+    @abstractmethod
+    def get_topic_for_check(self, tag: str):
+        """Проверка существования темы в БД"""
+        pass
+
+    @abstractmethod
+    def get_task_for_check(self, task: dict):
+        """Проверка существования задачи  в БД"""
         pass
 
 
@@ -26,10 +36,10 @@ class PostgresWorker(DBWorker, PostgresMixin):
         self.password = password
         self.host = db_host
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.db_name}'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f'PostgresWorker(db_name={self.db_name}, '
                 f'password={self.password}, user={self.user})')
 
@@ -61,7 +71,7 @@ class PostgresWorker(DBWorker, PostgresMixin):
 
             conn.commit()
 
-    def get_topic_for_check(self, tag):
+    def get_topic_for_check(self, tag: str) -> tuple:
         """Проверка существования темы в БД"""
         with psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user) as conn:
             with conn.cursor() as cur:
@@ -76,7 +86,7 @@ class PostgresWorker(DBWorker, PostgresMixin):
 
                 return topic_id
 
-    def get_task_for_check(self, task):
+    def get_task_for_check(self, task: dict) -> tuple:
         """Проверка существования задачи  в БД"""
         with psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user) as conn:
             with conn.cursor() as cur:
