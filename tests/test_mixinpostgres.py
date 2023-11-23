@@ -1,4 +1,4 @@
-from config import db_name, db_password
+from config_for_test import db_name, db_password
 from tests.conftests import get_bd_connection, data_for_test, db_create_table, db_worker
 
 test_db_name = db_name + '_test'
