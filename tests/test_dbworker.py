@@ -1,8 +1,16 @@
 import psycopg2
-from src.config import db_name, db_password, db_user
+from config import db_name, db_password, db_user
 from tests.conftests import db_worker, data_for_test, get_bd_connection, db_create_table
 
 test_db_name = db_name + '_test'
+
+
+def test_create_table(get_bd_connection, db_worker):
+    db_test = db_worker
+    db_test.create_table()
+
+    # TestCase1 создание таблиц в БД
+    assert True
 
 
 def test_add_data(get_bd_connection, db_create_table, db_worker, data_for_test):

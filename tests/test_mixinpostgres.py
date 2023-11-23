@@ -1,5 +1,4 @@
-from src.dbworker import PostgresWorker
-from src.config import db_name, db_password
+from config import db_name, db_password
 from tests.conftests import get_bd_connection, data_for_test, db_create_table, db_worker
 
 test_db_name = db_name + '_test'
@@ -47,5 +46,6 @@ def test_get_data_for_user(get_bd_connection, db_create_table, db_worker, data_f
     db_test.add_data(data_for_test)
 
     result = db_test.get_data_for_user(test_db_name, password, 'brute force', 500, 1200)
+
     # TestCase5 получение данных из БД по передаваемым параметрам
     assert result[0][1] == 'test2'
