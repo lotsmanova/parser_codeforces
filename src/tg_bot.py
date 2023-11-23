@@ -1,24 +1,31 @@
-import psycopg2
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from src.dbworker import PostgresWorker
-from src.main import token_tg, db_name, db_password
+from config import token_tg, db_name, db_password
+
 
 bot = telebot.TeleBot(token_tg)
 
+# определяем словарь с состояниями
+state = {
+    'running': True,
+    'topic': '',
+    'rating': None,
+    'rating_from': None,
+    'rating_to': None
+}
+
+# экземпляр класса PostgresWorker
 db_worker = PostgresWorker(db_name, db_password)
 
-min_rating = db_worker.get_min_rating()
-max_rating = db_worker.get_max_rating()
+# наименьшая сложность
+min_rating = db_worker.get_min_rating(db_name, db_password)
+# наибольшая сложность
+max_rating = db_worker.get_max_rating(db_name, db_password)
 
-# default values
-topic = ''
-rating = None
-running = True
-rating_from = None
-rating_to = None
+# темы задач
+list_topic_db = db_worker.get_topic(db_name, db_password)
 
-list_topic_db = db_worker.get_topic()
 list_str_topic = []
 
 for tuple_topic in list_topic_db:
@@ -30,9 +37,9 @@ for tuple_topic in list_topic_db:
 def start(message):
     """Привествия пользователя"""
 
-    global running
     if message.text == '/start':
-        running = True
+        state['running'] = True
+
         bot.send_message(
             message.from_user.id,
             "Привет! Я бот для получения задач с сайта codeforces.com"
@@ -65,8 +72,7 @@ def get_topic(message):
         main_kb = InlineKeyboardMarkup()
         buttons_topic = []
         for topic_task in list_str_topic:
-            buttons_topic.append(InlineKeyboardButton(topic_task,
-                                                      callback_data=topic_task))
+            buttons_topic.append(InlineKeyboardButton(topic_task, callback_data=topic_task))
 
         main_kb.add(*buttons_topic)
 
@@ -80,9 +86,8 @@ def get_topic(message):
 def callback(call):
     """Обработка темы"""
 
-    global topic
+    state['topic'] = call.data
 
-    topic = call.data
     bot.send_message(
         call.message.chat.id,
         "Чтобы выбрать сложность, введите '/rating'"
@@ -123,25 +128,28 @@ def get_rating(message):
 def callback_rating(call):
     """Обработка сложности"""
 
-    global rating
-    global rating_from
-    global rating_to
+    rating_from = state['rating_from']
+    rating_to = state['rating_to']
 
-    rating = call.data
+    choose_rating = call.data
+    state['rating'] = choose_rating
 
-    if rating == 'rating_easy':
+    if choose_rating == 'rating_easy':
         rating_from = min_rating
         rating_to = 1600
-    elif rating == 'rating_average':
+    elif choose_rating == 'rating_average':
         rating_from = 1600
         rating_to = 2400
-    elif rating == 'rating_hard':
+    elif choose_rating == 'rating_hard':
         rating_from = 2400
         rating_to = max_rating
 
-    bot.send_message(call.message.chat.id,
-                     f'Обрабатываю запрос на получение задач по теме "{topic}" '
-                     f'со сложностью {rating_from} - {rating_to}')
+    state['rating_from'] = rating_from
+    state['rating_to'] = rating_to
+
+    bot.send_message(call.message.chat.id, f'Обрабатываю запрос на получение задач по теме "{state["topic"]}" '
+                                           f'со сложностью {rating_from} - {rating_to}')
+
     bot.send_message(call.message.chat.id,
                      'Чтобы получить ответ на запрос, введите "/result"')
 
@@ -153,65 +161,44 @@ def callback_rating(call):
 def get_data_db(message):
     """Получение данных из БД"""
 
+    choose_topic = state['topic']
+    rating_from = state['rating_from']
+    rating_to = state['rating_to']
+
     if message.text == '/result':
+        tasks_codeforces = db_worker.get_data_for_user(db_name, db_password, choose_topic, rating_from, rating_to)
 
-        global topic
+        if tasks_codeforces:
+            tasks_str = []
+            i = 0
+            for task in tasks_codeforces:
+                i += 1
+                task_num = task[2]
+                task_name = task[1]
+                count = task[4]
 
-        conn = psycopg2.connect(dbname=db_name, password=db_password, user='postgres')
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT topic_id FROM topics
-                WHERE topic_name = %s
-                """,
-                (topic,)
-            )
-            topic_id = cur.fetchone()
+                slice_num = task_num[-2:]
+                if slice_num[0].isalpha():
+                    num_for_link = task_num[:len(task_num) - 2]
+                    index = slice_num
+                else:
+                    num_for_link = task_num[:len(task_num) - 1]
+                    index = task_num[-1:]
 
-            cur.execute(
-                f"""
-                SELECT * FROM tasks
-                WHERE rating BETWEEN {rating_from} AND {rating_to}
-                AND topic_id = {topic_id[0]}
-                ORDER BY solved_count DESC
-                LIMIT 10;
-                """
-            )
+                task_link = f"https://codeforces.com/problemset/problem/{num_for_link}/{index}"
+                task_text = (f"{i}. Номер задачи: {task_num};\nНазвание: {task_name};\n"
+                             f"Количество решений: {count};\n"
+                             f"<a href='{task_link}'>Ссылка на задачу</a>\n")
+                tasks_str.append(task_text)
 
-            tasks_codeforces = cur.fetchall()
+            tasks_message = (f"Задачи по теме '{state['topic']}' "
+                             f"со сложностью {state['rating_from']} - {state['rating_to']}:\n\n") + "\n".join(tasks_str)
+            bot.send_message(message.from_user.id, tasks_message, parse_mode="HTML")
+            bot.send_message(message.from_user.id, 'Чтобы отправить новый запрос, введите "/start"')
 
-            if tasks_codeforces != []:
-
-                tasks_str = []
-                i = 0
-                for task in tasks_codeforces:
-                    i += 1
-                    task_num = task[2]
-                    task_name = task[1]
-                    count = task[4]
-
-                    slice_num = task_num[-2:]
-                    if slice_num[0].isalpha():
-                        num_for_link = task_num[:len(task_num) - 2]
-                        index = slice_num
-                    else:
-                        num_for_link = task_num[:len(task_num) - 1]
-                        index = task_num[-1:]
-
-                    task_link = f"https://codeforces.com/problemset/problem/{num_for_link}/{index}"
-                    task_text = (f"{i}. Номер задачи: {task_num};\nНазвание: {task_name};\n"
-                                 f"Количество решений: {count};\n"
-                                 f"<a href='{task_link}'>Ссылка на задачу</a>\n")
-                    tasks_str.append(task_text)
-
-                tasks_message = (f"Задачи по теме '{topic}' "
-                                 f"со сложностью {rating_from} - {rating_to}:\n\n") + "\n".join(tasks_str)
-                bot.send_message(message.from_user.id, tasks_message, parse_mode="HTML")
-                bot.send_message(message.from_user.id, 'Чтобы отправить новый запрос, введите "/start"')
-
-            else:
-                bot.send_message(message.from_user.id, 'Задач по вашему запросу не найдено. Повторите запрос')
-                start(message)
+        else:
+            bot.send_message(message.from_user.id, 'Задач по вашему запросу не найдено. Повторите запрос')
+            start(message)
     else:
         bot.send_message(message.from_user.id, 'Неправильная команда. Повторите запрос')
         start(message)
@@ -227,11 +214,13 @@ def remove_inline_keyboard(message):
 def stop(message):
     """Остановка бота"""
 
-    global running
-    running = False
+    state['running'] = False
 
     bot.send_message(message.from_user.id, "Бот остановлен")
 
 
-while running:
-    bot.polling(none_stop=True, interval=0)
+while state['running']:
+    try:
+        bot.polling(none_stop=True, interval=0)
+    except Exception as e:
+        print(f"Error: {e}")

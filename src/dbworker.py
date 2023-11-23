@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import psycopg2
+from config import db_user, db_host
 from src.mixinpostgres import PostgresMixin
 
 
@@ -8,109 +9,141 @@ class DBWorker(ABC):
 
     @abstractmethod
     def create_table(self):
+        """Создание таблицы в БД"""
         pass
 
     @abstractmethod
-    def add_data(self, data):
+    def add_data(self, data: dict):
+        """Добавление данных в БД"""
         pass
 
     @abstractmethod
-    def end_connect(self):
+    def get_topic_for_check(self, tag: str):
+        """Проверка существования темы в БД"""
+        pass
+
+    @abstractmethod
+    def get_task_for_check(self, task: dict):
+        """Проверка существования задачи  в БД"""
         pass
 
 
 class PostgresWorker(DBWorker, PostgresMixin):
 
-    def __init__(self, db_name: str, password: str, user='postgres') -> None:
+    def __init__(self, db_name: str, password: str) -> None:
         self.db_name = db_name
-        self.user = user
+        self.user = db_user
         self.password = password
-        self.conn = psycopg2.connect(dbname=self.db_name,
-                                     password=self.password, user=self.user)
+        self.host = db_host
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.db_name}'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (f'PostgresWorker(db_name={self.db_name}, '
                 f'password={self.password}, user={self.user})')
 
     def create_table(self) -> None:
         """Создание таблицы в БД"""
 
-        with self.conn.cursor() as cur:
-            cur.execute("""
-                    CREATE TABLE topics
-                    (
-                        topic_id serial PRIMARY KEY,
-                        topic_name varchar(255) NOT NULL
-                    );
-                """)
+        with psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user, host=self.host) as conn:
 
-            cur.execute("""
-                    CREATE TABLE tasks
-                    (
-                        task_id serial PRIMARY KEY,
-                        task_name varchar(255) NOT NULL,
-                        task_number varchar(100) NOT NULL,
-                        topic_id int REFERENCES topics(topic_id),
-                        solved_count int,
-                        rating int
-                    );
-                """)
+            with conn.cursor() as cur:
+                cur.execute("""
+                        CREATE TABLE topics
+                        (
+                            topic_id serial PRIMARY KEY,
+                            topic_name varchar(255) NOT NULL
+                        );
+                    """)
 
-        self.conn.commit()
+                cur.execute("""
+                        CREATE TABLE tasks
+                        (
+                            task_id serial PRIMARY KEY,
+                            task_name varchar(255) NOT NULL,
+                            task_number varchar(100) NOT NULL,
+                            topic_id int REFERENCES topics(topic_id),
+                            solved_count int,
+                            rating int
+                        );
+                    """)
+
+            conn.commit()
+
+    def get_topic_for_check(self, tag: str) -> tuple:
+        """Проверка существования темы в БД"""
+        with psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT topic_id FROM topics WHERE topic_name = %s
+                    """,
+                    (tag,)
+                )
+
+                topic_id = cur.fetchone()
+
+                return topic_id
+
+    def get_task_for_check(self, task: dict, topic: str) -> list:
+        """Проверка существования задачи  в БД"""
+        with psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT task_id FROM tasks
+                    WHERE task_name = %s AND task_number = %s
+                    AND topic_id = (SELECT topic_id FROM topics WHERE topic_name = %s)
+                    """,
+                    (task['name'], f"{task['contestId']}{task['index']}", topic,)
+                )
+
+                task_id = cur.fetchone()
+
+                return task_id
 
     def add_data(self, data_codeforces: dict) -> None:
         """Добавление данных в БД"""
 
-        with self.conn.cursor() as cur:
-            for task in data_codeforces['problems']:
-                # проверка существования записи
-                for tag in task['tags']:
-                    cur.execute(
-                        """
-                        SELECT topic_id FROM topics WHERE topic_name = %s
-                        """,
-                        (tag,)
-                    )
-
-                    topic_id = cur.fetchone()
-
-                    if topic_id is None:
-                        # Если topic нет в таблице, добавляем новый id
-                        cur.execute(
-                            """
-                            INSERT INTO topics (topic_name)
-                            VALUES (%s)
-                            RETURNING topic_id
-                            """,
-                            (tag,)
-                        )
-                        topic_id = cur.fetchone()[0]
+        with psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user) as conn:
+            with conn.cursor() as cur:
+                for task in data_codeforces['problems']:
 
                     # проверка существования записи
-                    cur.execute(
-                        """
-                        SELECT task_name, task_number FROM tasks
-                        WHERE task_name = %s AND task_number = %s
-                        """,
-                        (task['name'], f"{task['contestId']}{task['index']}",)
-                    )
+                    for tag in task['tags']:
 
-                    task_id = cur.fetchone()
+                        topic_id = self.get_topic_for_check(tag)
 
-                    if task_id is None:
-                        # добавляем данные в таблицу tasks
-                        cur.execute(
-                            """
-                            INSERT INTO tasks (topic_id, task_name, task_number, rating)
-                            VALUES (%s, %s, %s, %s)
-                            RETURNING task_id
-                            """,
-                            (topic_id, task['name'], f"{task['contestId']}{task['index']}", task.get('rating'))
-                        )
-                        task_id = cur.fetchone()[0]
+                        if topic_id is None:
+
+                            # Если topic нет в таблице, добавляем новый id
+                            cur.execute(
+                                """
+                                INSERT INTO topics (topic_name)
+                                VALUES (%s)
+                                RETURNING topic_id
+                                """,
+                                (tag,)
+                            )
+                            topic_id = cur.fetchone()[0]
+                            conn.commit()
+
+                        # проверка существования записи
+                        task_id = self.get_task_for_check(task, tag)
+
+                        if task_id is None:
+                            # добавляем данные в таблицу tasks
+                            cur.execute(
+                                """
+                                INSERT INTO tasks (topic_id, task_name, task_number, rating)
+                                VALUES (%s, %s, %s, %s)
+                                RETURNING task_id
+                                """,
+                                (topic_id, task['name'], f"{task['contestId']}{task['index']}", task.get('rating'))
+                            )
+                            task_id = cur.fetchone()[0]
+                            conn.commit()
 
                         for count in data_codeforces['problemStatistics']:
                             if f"{count['contestId']}{count['index']}" == f"{task['contestId']}{task['index']}":
@@ -122,12 +155,5 @@ class PostgresWorker(DBWorker, PostgresMixin):
                                     """,
                                     (count['solvedCount'], task_id)
                                 )
+                                conn.commit()
                                 break
-
-            # завершение сеанса подключения
-            self.conn.commit()
-
-    def end_connect(self) -> None:
-        """Метод для завершения подключения к БД"""
-
-        self.conn.close()

@@ -7,6 +7,7 @@ class GetAPI(ABC):
 
     @abstractmethod
     def get_data(self):
+        """Метод получения данных по API"""
         pass
 
 
@@ -19,8 +20,8 @@ class CodeforcesAPI(GetAPI):
     def get_data(self) -> list[dict]:
         """Метод получения данных по API"""
 
-        response = requests.get(self.url)
-        if response.status_code == 200:
+        response = requests.get(self.url, timeout=10)
+        if response.ok:
             return response.json()['result']
         else:
             return 'Ошибка при получении данных'

@@ -1,15 +1,7 @@
-import os
+from config import api_codeforces, db_name, db_password
 from src.getapi import CodeforcesAPI
 from src.dbworker import PostgresWorker
-from dotenv import load_dotenv
 from src.utils import create_database, check_create_db
-
-load_dotenv('../.env')
-
-db_name = os.getenv('DB_NAME')
-db_password = os.getenv('DB_PASSWORD')
-token_tg = os.getenv('TELEGRAM_TOKEN')
-api_codeforces = os.getenv('API_CODEFORCES')
 
 
 def main():
@@ -20,7 +12,7 @@ def main():
     print('Получены данные с сайта codeforces.com')
 
     # create db
-    if check_create_db is False:
+    if check_create_db(db_name, db_password) is None:
         create_database(db_name, db_password)
         print(f'Создана база данных {db_name}')
     else:
@@ -29,7 +21,7 @@ def main():
     # create table
     db_worker = PostgresWorker(db_name, db_password)
 
-    if db_worker.check_create_table() is False:
+    if db_worker.check_create_table(db_name, db_password) is None:
         db_worker.create_table()
         print('Созданы таблицы topics и tasks')
     else:
@@ -38,8 +30,6 @@ def main():
     # add data to db
     db_worker.add_data(codeforces_data)
     print(f'Добавлены данные в БД {db_name}')
-
-    db_worker.end_connect()
 
 
 if __name__ == '__main__':
