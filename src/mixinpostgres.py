@@ -1,12 +1,12 @@
 import psycopg2
-from src.config import db_user, db_name, db_password
+from src.config import db_user
 
 
 class PostgresMixin:
     """Класс миксин для работы с БД"""
 
     @staticmethod
-    def check_create_table():
+    def check_create_table(db_name, db_password):
         """Метод проверки создания таблиц"""
         with psycopg2.connect(dbname=db_name, password=db_password, user=db_user) as conn:
             with conn.cursor() as cur:
@@ -16,7 +16,7 @@ class PostgresMixin:
             return exists
 
     @staticmethod
-    def get_topic() -> list:
+    def get_topic(db_name, db_password) -> list:
         """Метод получения списка тем"""
 
         with psycopg2.connect(dbname=db_name, password=db_password, user=db_user) as conn:
@@ -32,7 +32,7 @@ class PostgresMixin:
             return topic_name
 
     @staticmethod
-    def get_max_rating() -> int:
+    def get_max_rating(db_name, db_password) -> int:
         """Метод получения максимальной сложности задач"""
 
         with psycopg2.connect(dbname=db_name, password=db_password, user=db_user) as conn:
@@ -47,7 +47,7 @@ class PostgresMixin:
             return max_rating
 
     @staticmethod
-    def get_min_rating() -> int:
+    def get_min_rating(db_name, db_password) -> int:
         """Метод получения минимальной сложности задач"""
 
         with psycopg2.connect(dbname=db_name, password=db_password, user=db_user) as conn:
@@ -62,7 +62,7 @@ class PostgresMixin:
             return min_rating
 
     @staticmethod
-    def get_data_for_user(topic, rating_from, rating_to):
+    def get_data_for_user(db_name, db_password, topic, rating_from, rating_to):
         with psycopg2.connect(dbname=db_name, password=db_password, user=db_user) as conn:
             with conn.cursor() as cur:
                 cur.execute(

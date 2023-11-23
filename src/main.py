@@ -21,7 +21,7 @@ def main():
     # create table
     db_worker = PostgresWorker(db_name, db_password)
 
-    if db_worker.check_create_table() is None:
+    if db_worker.check_create_table(db_name, db_password) is None:
         db_worker.create_table()
         print('Созданы таблицы topics и tasks')
     else:

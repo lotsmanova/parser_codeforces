@@ -19,12 +19,12 @@ state = {
 db_worker = PostgresWorker(db_name, db_password)
 
 # наименьшая сложность
-min_rating = db_worker.get_min_rating()
+min_rating = db_worker.get_min_rating(db_name, db_password)
 # наибольшая сложность
-max_rating = db_worker.get_max_rating()
+max_rating = db_worker.get_max_rating(db_name, db_password)
 
 # темы задач
-list_topic_db = db_worker.get_topic()
+list_topic_db = db_worker.get_topic(db_name, db_password)
 
 list_str_topic = []
 
@@ -166,7 +166,7 @@ def get_data_db(message):
     rating_to = state['rating_to']
 
     if message.text == '/result':
-        tasks_codeforces = db_worker.get_data_for_user(choose_topic, rating_from, rating_to)
+        tasks_codeforces = db_worker.get_data_for_user(db_name, db_password, choose_topic, rating_from, rating_to)
 
         if tasks_codeforces:
             tasks_str = []
