@@ -62,7 +62,7 @@ class PostgresMixin:
             return min_rating
 
     @staticmethod
-    def get_data_for_user(db_name: str, db_password: str, topic:str, rating_from: int, rating_to: int) -> list:
+    def get_data_for_user(db_name: str, db_password: str, topic: str, rating_from: int, rating_to: int) -> list:
         with psycopg2.connect(dbname=db_name, password=db_password, user=db_user) as conn:
             with conn.cursor() as cur:
                 cur.execute(
@@ -76,12 +76,12 @@ class PostgresMixin:
 
                 cur.execute(
                     f"""
-                            SELECT * FROM tasks
-                            WHERE rating BETWEEN {rating_from} AND {rating_to}
-                            AND topic_id = {topic_id[0]}
-                            ORDER BY solved_count DESC
-                            LIMIT 10;
-                            """
+                    SELECT * FROM tasks
+                    WHERE rating BETWEEN {rating_from} AND {rating_to}
+                    AND topic_id = {topic_id[0]}
+                    ORDER BY solved_count DESC
+                    LIMIT 10;
+                    """
                 )
 
                 tasks_codeforces = cur.fetchall()

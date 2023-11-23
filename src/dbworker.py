@@ -86,7 +86,7 @@ class PostgresWorker(DBWorker, PostgresMixin):
 
                 return topic_id
 
-    def get_task_for_check(self, task: dict) -> tuple:
+    def get_task_for_check(self, task: dict, topic: str) -> list:
         """Проверка существования задачи  в БД"""
         with psycopg2.connect(dbname=self.db_name, password=self.password, user=self.user) as conn:
             with conn.cursor() as cur:
@@ -94,8 +94,9 @@ class PostgresWorker(DBWorker, PostgresMixin):
                     """
                     SELECT task_id FROM tasks
                     WHERE task_name = %s AND task_number = %s
+                    AND topic_id = (SELECT topic_id FROM topics WHERE topic_name = %s)
                     """,
-                    (task['name'], f"{task['contestId']}{task['index']}",)
+                    (task['name'], f"{task['contestId']}{task['index']}", topic,)
                 )
 
                 task_id = cur.fetchone()
@@ -129,7 +130,7 @@ class PostgresWorker(DBWorker, PostgresMixin):
                             conn.commit()
 
                         # проверка существования записи
-                        task_id = self.get_task_for_check(task)
+                        task_id = self.get_task_for_check(task, tag)
 
                         if task_id is None:
                             # добавляем данные в таблицу tasks
