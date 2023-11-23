@@ -1,5 +1,5 @@
 import psycopg2
-from config import db_name, db_password, db_user
+from config_for_test import db_name, db_password, db_user
 from tests.conftests import db_worker, data_for_test, get_bd_connection, db_create_table
 
 test_db_name = db_name + '_test'

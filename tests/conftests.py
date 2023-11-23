@@ -1,6 +1,6 @@
 import psycopg2
 import pytest
-from config import db_user, db_name, db_host, db_password
+from config_for_test import db_user, db_name, db_host, db_password
 from src.dbworker import PostgresWorker
 
 main_db_creds = {
@@ -19,7 +19,6 @@ def create_test_database():
     conn.autocommit = True
     with conn.cursor() as cur:
         cur.execute(f"CREATE DATABASE {test_db_name}")
-
     conn.close()
 
 
@@ -45,15 +44,17 @@ def remote_test_database():
     conn = psycopg2.connect(password=main_db_creds['password'], user=main_db_creds['user'])
     conn.autocommit = True
     with conn.cursor() as cur:
+        cur.execute(
+            f"SELECT pg_terminate_backend(pg_stat_activity.pid) "
+            f"FROM pg_stat_activity "
+            f"WHERE pg_stat_activity.datname = '{test_db_name}' AND pid <> pg_backend_pid();")
         cur.execute(f"DROP DATABASE {test_db_name}")
-
     conn.close()
 
 
 @pytest.fixture(scope='function')
 def get_bd_connection():
     create_test_database()
-    print('create')
     yield
     remote_test_database()
 

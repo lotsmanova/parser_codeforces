@@ -1,6 +1,6 @@
 import psycopg2
 from src.utils import create_database, check_create_db
-from config import db_name, db_password, db_user
+from config_for_test import db_name, db_password, db_user
 from tests.conftests import get_bd_connection
 
 test_db_name = db_name + '_test'
