@@ -1,73 +1,51 @@
-import psycopg2
-import pytest
 from src.dbworker import PostgresWorker
-from src.utils import create_database
+from src.config import db_name, db_password
+from tests.conftests import get_bd_connection, data_for_test, db_create_table, db_worker
 
-name = 'test'
-password = '12345'
-
-
-@pytest.fixture
-def create_test_database():
-    # фикстура создания тестовой БД и таблиц
-
-    conn = psycopg2.connect(password=password, user='postgres')
-    conn.autocommit = True
-    with conn.cursor() as cur:
-        cur.execute(f"DROP DATABASE {name}")
-    conn.close()
-
-    create_database(name, password)
-
-    db_test = PostgresWorker(name, password)
-    db_test.create_table()
+test_db_name = db_name + '_test'
+password = db_password
 
 
-@pytest.fixture()
-def data_for_db():
-    data = {
-        'problems': [
-            {'contestId': 1895, 'index': 'C', 'name': 'TEST',
-             'type': 'PROGRAMMING', 'tags': ['brute force', 'dp'],
-             'rating': 1000},
-            {'contestId': 1893, 'index': 'C', 'name': 'Freedom of Choice',
-             'type': 'PROGRAMMING', 'points': 1250.0,
-             'tags': ['brute force', 'implementation'], 'rating': 2000},
-            {'contestId': 1893, 'index': 'A', 'name': 'Anonymous Informant',
-             'type': 'PROGRAMMING', 'points': 500.0,
-             'tags': ['graphs', 'implementation'], 'rating': 1500},
-            ],
-        'problemStatistics': [
-            {'contestId': 1895, 'index': 'C', 'solvedCount': 6817},
-            {'contestId': 1893, 'index': 'C', 'solvedCount': 780},
-            {'contestId': 1893, 'index': 'A', 'solvedCount': 4225}]
-    }
-    return data
+def test_check_create_table(get_bd_connection, db_create_table, db_worker):
+    db_test = db_worker
+    db_test.check_create_table(test_db_name, password)
+
+    # TestCase1 проверка создания таблиц
+    assert True
 
 
-def test_get_topic(create_test_database, data_for_db):
-    # TestCase1 вывод списка тем
+def test_get_topic(get_bd_connection, db_create_table, db_worker, data_for_test):
 
-    db = PostgresWorker(name, password)
-    db.add_data(data_for_db)
+    db_test = db_worker
+    db_test.add_data(data_for_test)
 
-    assert db.get_topic() == [('brute force',), ('dp',),
-                              ('implementation',), ('graphs',)]
-
-
-def test_get_max_rating(create_test_database, data_for_db):
-    # TestCase2 получение максимальной сложности
-
-    db = PostgresWorker(name, password)
-    db.add_data(data_for_db)
-
-    assert db.get_max_rating() == 2000
+    # TestCase2 вывод списка тем
+    assert db_test.get_topic(test_db_name, password) == [('brute force',), ('dp',), ('hashing',),
+                                                         ('implementation',), ('math',), ('graphs',)]
 
 
-def test_get_min_rating(create_test_database, data_for_db):
-    # TestCase3 получение минимальной сложности
+def test_get_max_rating(get_bd_connection, db_create_table, db_worker, data_for_test):
 
-    db = PostgresWorker(name, password)
-    db.add_data(data_for_db)
+    db_test = db_worker
+    db_test.add_data(data_for_test)
 
-    assert db.get_min_rating() == 1000
+    # TestCase3 получение максимальной сложности
+    assert db_test.get_max_rating(test_db_name, password) == 1000
+
+
+def test_get_min_rating(get_bd_connection, db_create_table, db_worker, data_for_test):
+
+    db_test = db_worker
+    db_test.add_data(data_for_test)
+
+    # TestCase4 получение минимальной сложности
+    assert db_test.get_min_rating(test_db_name, password) == 10
+
+
+def test_get_data_for_user(get_bd_connection, db_create_table, db_worker, data_for_test):
+    db_test = db_worker
+    db_test.add_data(data_for_test)
+
+    result = db_test.get_data_for_user(test_db_name, password, 'brute force', 500, 1200)
+    # TestCase5 получение данных из БД по передаваемым параметрам
+    assert result[0][1] == 'test2'
