@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv('.env')
+load_dotenv('../.env')
 
 db_name = os.getenv('DB_NAME')
 db_password = os.getenv('DB_PASSWORD')
